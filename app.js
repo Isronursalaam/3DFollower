@@ -3,9 +3,74 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 /* ==========================================================================
+   CHARACTERS CONFIGURATION
+   ========================================================================== */
+const CHARACTERS = {
+  shiroko: {
+    id: 'shiroko',
+    name: 'Shiroko',
+    tag: '[BLUE ARCHIVE]',
+    title: 'SHIROKO 3D TRACKER',
+    file: 'Shiroko.glb',
+    boneHead: 'Bip001_Head',
+    boneNeck: 'Bip001_Neck',
+    boneSpine: 'Bip001_Spine1',
+    eyeLBone: 'Bip001_eye_L',
+    eyeRBone: 'Bip001_eye_R',
+    boneEyeDL: 'Bip001_bone_eye_D_L',
+    boneEyeDR: 'Bip001_bone_eye_D_R',
+    mouth300: 'Mouth_300',
+    mouth401: 'Mouth_401',
+    mouth402: 'Mouth_402',
+    mouth602: 'Mouth_602',
+    idleAnim: 'Cafe_Idle',
+    hasFaceRig: true,
+    modelRotationY: 0,
+    headAxes: {
+      yaw: [1, 0, 0],
+      pitch: [0, 0, 1],
+      roll: [0, 1, 0]
+    },
+    cameraPos: [0, 0.60, 1.45],
+    controlsTarget: [0, 0.52, 0]
+  },
+  drdoom: {
+    id: 'drdoom',
+    name: 'Doctor Doom',
+    tag: '[MARVEL]',
+    title: 'DR. DOOM 3D TRACKER',
+    file: 'DrDoom.glb',
+    boneHead: 'Bip01_Head_07',
+    boneNeck: 'Bip01_Neck_06',
+    boneSpine: null,
+    eyeLBone: null,
+    eyeRBone: null,
+    boneEyeDL: null,
+    boneEyeDR: null,
+    mouth300: null,
+    mouth401: null,
+    mouth402: null,
+    mouth602: null,
+    idleAnim: 'idle',
+    hasFaceRig: false,
+    modelRotationY: -Math.PI / 2,
+    headAxes: {
+      yaw: [1, 0, 0],
+      pitch: [0, 1, 0],
+      roll: [0, 0, 1]
+    },
+    cameraPos: [0, 0.52, 0.88],
+    controlsTarget: [0, 0.48, 0]
+  }
+};
+
+/* ==========================================================================
    STATE
    ========================================================================== */
 const state = {
+  // Current Character: 'shiroko' | 'drdoom'
+  currentCharId: 'shiroko',
+
   // 3D Scene
   model: null,
   mixer: null,
@@ -14,12 +79,12 @@ const state = {
   spineBone: null,
 
   // Eye Bones for Blinking
-  eyeLBone: null,      // Bip001_eye_L
-  eyeRBone: null,      // Bip001_eye_R
-  boneEyeDL: null,     // Bip001_bone_eye_D_L
-  boneEyeDR: null,     // Bip001_bone_eye_D_R
+  eyeLBone: null,
+  eyeRBone: null,
+  boneEyeDL: null,
+  boneEyeDR: null,
 
-  // Mouth Meshes (Blue Archive Inverse Morph Targets)
+  // Mouth Meshes
   mouthNodes: {
     m300: null,
     m401: null,
@@ -53,10 +118,6 @@ const state = {
   targetMouth: 0,
   curMouth: 0,
 
-  // Natural blink timer for idle when camera is off
-  idleBlinkTimer: 0,
-  isIdleBlinking: false,
-
   // Calibration offset
   calibYaw: 0,
   calibPitch: 0,
@@ -79,7 +140,10 @@ const state = {
    ========================================================================== */
 const dom = {
   container: document.getElementById('canvas-container'),
+  brandTag: document.getElementById('brand-tag'),
+  brandTitle: document.getElementById('brand-title'),
   statusBadge: document.getElementById('status-badge'),
+  btnCharSwitch: document.getElementById('btn-char-switch'),
   btnCamera: document.getElementById('btn-camera'),
   btnBlinkMode: document.getElementById('btn-blink-mode'),
   btnReset: document.getElementById('btn-reset'),
@@ -164,59 +228,91 @@ function onResize() {
 }
 
 /* ==========================================================================
-   MODEL LOADING & RIGGING (HEAD + EYES + MOUTH)
+   MODEL LOADING & RIGGING (SHIROKO & DOCTOR DOOM)
    ========================================================================== */
-function loadModel() {
-  const loader = new GLTFLoader();
+function loadModel(charId = 'shiroko') {
+  const char = CHARACTERS[charId] || CHARACTERS.shiroko;
+  state.currentCharId = char.id;
 
+  // Show loading overlay
+  dom.loadingOverlay.style.display = 'flex';
+  dom.loadingOverlay.style.opacity = '1';
+  dom.progressFill.style.width = '0%';
+  dom.loadingText.textContent = `Menyiapkan ${char.name}...`;
+
+  // Remove existing model & stop mixer
+  if (state.model) {
+    scene.remove(state.model);
+    state.model = null;
+  }
+  if (state.mixer) {
+    state.mixer.stopAllAction();
+    state.mixer = null;
+  }
+
+  // Update brand UI
+  if (dom.brandTag) dom.brandTag.textContent = char.tag;
+  if (dom.brandTitle) dom.brandTitle.textContent = char.title;
+  if (dom.btnCharSwitch) dom.btnCharSwitch.textContent = `[MODEL: ${char.name.toUpperCase()}]`;
+  if (dom.btnBlinkMode) {
+    dom.btnBlinkMode.style.display = char.hasFaceRig ? 'inline-flex' : 'none';
+  }
+
+  const loader = new GLTFLoader();
   loader.load(
-    'Shiroko.glb',
+    char.file,
     (gltf) => {
       state.model = gltf.scene;
+      if (char.modelRotationY) {
+        state.model.rotation.y = char.modelRotationY;
+        state.model.updateMatrixWorld(true);
+      }
 
       // Map Head & Neck & Spine bones
-      state.headBone = state.model.getObjectByName('Bip001_Head');
-      state.neckBone = state.model.getObjectByName('Bip001_Neck');
-      state.spineBone = state.model.getObjectByName('Bip001_Spine1');
+      state.headBone = state.model.getObjectByName(char.boneHead);
+      state.neckBone = state.model.getObjectByName(char.boneNeck);
+      state.spineBone = state.model.getObjectByName(char.boneSpine);
 
-      // Map Eye bones for blinking
-      state.eyeLBone = state.model.getObjectByName('Bip001_eye_L');
-      state.eyeRBone = state.model.getObjectByName('Bip001_eye_R');
-      state.boneEyeDL = state.model.getObjectByName('Bip001_bone_eye_D_L');
-      state.boneEyeDR = state.model.getObjectByName('Bip001_bone_eye_D_R');
+      if (char.hasFaceRig) {
+        state.eyeLBone = state.model.getObjectByName(char.eyeLBone);
+        state.eyeRBone = state.model.getObjectByName(char.eyeRBone);
+        state.boneEyeDL = state.model.getObjectByName(char.boneEyeDL);
+        state.boneEyeDR = state.model.getObjectByName(char.boneEyeDR);
 
-      // Map Mouth meshes (Mouth_300, Mouth_401, Mouth_402, Mouth_602)
-      state.mouthNodes = {
-        m300: state.model.getObjectByName('Mouth_300'),
-        m401: state.model.getObjectByName('Mouth_401'),
-        m402: state.model.getObjectByName('Mouth_402'),
-        m602: state.model.getObjectByName('Mouth_602')
-      };
+        state.mouthNodes = {
+          m300: state.model.getObjectByName(char.mouth300),
+          m401: state.model.getObjectByName(char.mouth401),
+          m402: state.model.getObjectByName(char.mouth402),
+          m602: state.model.getObjectByName(char.mouth602)
+        };
 
-      // Ensure all mouth meshes are visible (their visibility is controlled via morph target collapse/expansion)
-      Object.values(state.mouthNodes).forEach(m => {
-        if (m) m.visible = true;
-      });
+        Object.values(state.mouthNodes).forEach(m => {
+          if (m) m.visible = true;
+        });
 
-      console.log('Mouth Meshes Mapped:');
-      console.log('  Mouth_300:', !!state.mouthNodes.m300);
-      console.log('  Mouth_401:', !!state.mouthNodes.m401);
-      console.log('  Mouth_402:', !!state.mouthNodes.m402);
-      console.log('  Mouth_602:', !!state.mouthNodes.m602);
+        setBlink(0, 0);
+        setMouth(0);
+      } else {
+        state.eyeLBone = null;
+        state.eyeRBone = null;
+        state.boneEyeDL = null;
+        state.boneEyeDR = null;
+        state.mouthNodes = {};
+      }
 
       if (state.headBone) state.headRestQuat.copy(state.headBone.quaternion);
       if (state.neckBone) state.neckRestQuat.copy(state.neckBone.quaternion);
       if (state.spineBone) state.spineRestQuat.copy(state.spineBone.quaternion);
 
-      // Setup AnimationMixer with Idle Animation
+      // Animation Mixer
       state.mixer = new THREE.AnimationMixer(state.model);
 
-      const idleAnim = gltf.animations.find(a => a.name === 'Cafe_Idle') || gltf.animations[0];
+      const idleAnim = gltf.animations.find(a => a.name === char.idleAnim) || gltf.animations[0];
       if (idleAnim) {
-        // Strip Head, Neck, Eye, AND Mouth tracks so animation DOES NOT fight tracking!
+        // Strip Head, Neck, Eye, AND Mouth tracks so animation doesn't fight tracking!
         idleAnim.tracks = idleAnim.tracks.filter(track => {
           const name = track.name;
-          const isHeadOrNeck = name.startsWith('Bip001_Head') || name.startsWith('Bip001_Neck');
+          const isHeadOrNeck = name.includes('Head') || name.includes('Neck');
           const isEye = name.includes('_eye') || name.includes('eyeblow');
           const isMouth = name.startsWith('Mouth_') || name.includes('morphTargetInfluences');
           return !isHeadOrNeck && !isEye && !isMouth;
@@ -226,9 +322,10 @@ function loadModel() {
         action.play();
       }
 
-      // Initial eye & mouth states
-      setBlink(0, 0);
-      setMouth(0);
+      // Camera framing
+      camera.position.set(...char.cameraPos);
+      controls.target.set(...char.controlsTarget);
+      controls.update();
 
       scene.add(state.model);
 
@@ -243,12 +340,12 @@ function loadModel() {
       if (xhr.lengthComputable) {
         const pct = Math.round((xhr.loaded / xhr.total) * 100);
         dom.progressFill.style.width = pct + '%';
-        dom.loadingText.textContent = `Memuat Shiroko: ${pct}%`;
+        dom.loadingText.textContent = `Memuat ${char.name}: ${pct}%`;
       }
     },
     (err) => {
-      console.error('Gagal memuat Shiroko.glb:', err);
-      dom.loadingText.textContent = 'Gagal memuat Shiroko.glb!';
+      console.error(`Gagal memuat ${char.file}:`, err);
+      dom.loadingText.textContent = `Gagal memuat ${char.file}!`;
     }
   );
 }
@@ -614,19 +711,25 @@ function animate() {
     state.curPitch += (desiredPitch - state.curPitch) * lerpFactor;
     state.curRoll += (desiredRoll - state.curRoll) * lerpFactor;
 
-    // Apply to Head
-    const qHeadYaw = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), state.curYaw * 0.75);
-    const qHeadPitch = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), state.curPitch * 0.75);
-    const qHeadRoll = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), state.curRoll * 0.75);
-    const qHead = new THREE.Quaternion().copy(qHeadYaw).multiply(qHeadPitch).multiply(qHeadRoll);
+    // Retrieve character-specific head & neck rotation axes
+    const char = CHARACTERS[state.currentCharId] || CHARACTERS.shiroko;
+    const ax = char.headAxes || { yaw: [1, 0, 0], pitch: [0, 0, 1], roll: [0, 1, 0] };
 
-    state.headBone.quaternion.copy(state.headRestQuat).multiply(qHead);
+    // Apply to Head
+    if (state.headBone) {
+      const qHeadYaw = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(...ax.yaw), state.curYaw * 0.75);
+      const qHeadPitch = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(...ax.pitch), state.curPitch * 0.75);
+      const qHeadRoll = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(...ax.roll), state.curRoll * 0.75);
+      const qHead = new THREE.Quaternion().copy(qHeadYaw).multiply(qHeadPitch).multiply(qHeadRoll);
+
+      state.headBone.quaternion.copy(state.headRestQuat).multiply(qHead);
+    }
 
     // Apply to Neck
     if (state.neckBone) {
-      const qNeckYaw = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), state.curYaw * 0.25);
-      const qNeckPitch = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), state.curPitch * 0.25);
-      const qNeckRoll = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), state.curRoll * 0.25);
+      const qNeckYaw = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(...ax.yaw), state.curYaw * 0.25);
+      const qNeckPitch = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(...ax.pitch), state.curPitch * 0.25);
+      const qNeckRoll = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(...ax.roll), state.curRoll * 0.25);
       const qNeck = new THREE.Quaternion().copy(qNeckYaw).multiply(qNeckPitch).multiply(qNeckRoll);
       state.neckBone.quaternion.copy(state.neckRestQuat).multiply(qNeck);
     }
@@ -674,9 +777,18 @@ function setupEvents() {
     }
   });
 
+  // Toggle Model Karakter (Shiroko <-> Doctor Doom)
+  if (dom.btnCharSwitch) {
+    dom.btnCharSwitch.addEventListener('click', () => {
+      const nextChar = state.currentCharId === 'shiroko' ? 'drdoom' : 'shiroko';
+      loadModel(nextChar);
+    });
+  }
+
   dom.btnReset.addEventListener('click', () => {
-    camera.position.set(0, 0.60, 1.45);
-    controls.target.set(0, 0.52, 0);
+    const char = CHARACTERS[state.currentCharId] || CHARACTERS.shiroko;
+    camera.position.set(...char.cameraPos);
+    controls.target.set(...char.controlsTarget);
     controls.update();
 
     state.hasAutoCalibrated = false;

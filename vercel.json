@@ -21,7 +21,7 @@
       ]
     },
     {
-      "source": "/Shiroko.glb",
+      "source": "/(.*).glb",
       "headers": [
         {
           "key": "Content-Type",
