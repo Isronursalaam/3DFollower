@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shiroko 3D Motion Tracker</title>
+  <link rel="stylesheet" href="style.css">
+  
+  <!-- MediaPipe Face Mesh & Camera Utils (Local) -->
+  <script src="mediapipe/camera_utils.js"></script>
+  <script src="mediapipe/face_mesh.js"></script>
+
+  <!-- Three.js Import Map -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="app">
+    <!-- Top Header Bar (Simple & Clean) -->
+    <header id="top-bar">
+      <div class="brand">
+        <span class="tag">[BLUE ARCHIVE]</span>
+        <span class="title">SHIROKO 3D TRACKER</span>
+      </div>
+
+      <div class="status-wrapper">
+        <span id="status-badge" class="badge badge-off">[STATUS: KAMERA MATI]</span>
+      </div>
+
+      <div class="actions">
+        <button id="btn-blink-mode" class="btn btn-secondary" title="Ganti mode kedip mata: Kamera atau Otomatis">[KEDIP: KAMERA]</button>
+        <button id="btn-camera" class="btn btn-primary">[MULAI KAMERA]</button>
+        <button id="btn-reset" class="btn btn-secondary">[RESET POSISI]</button>
+      </div>
+    </header>
+
+    <!-- 3D Canvas -->
+    <main id="viewport">
+      <div id="canvas-container"></div>
+
+      <!-- Simple Loading Notice -->
+      <div id="loading-overlay">
+        <div class="loading-card">
+          <div class="loading-title">[MEMUAT SHIROKO 3D...]</div>
+          <div class="progress-track">
+            <div id="progress-fill" style="width: 0%;"></div>
+          </div>
+          <div id="loading-text" class="loading-sub">Menyiapkan model dan animasi...</div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Webcam Preview (Sudut Kiri Bawah) -->
+    <div id="webcam-box">
+      <div class="webcam-header">
+        <span id="webcam-label">[FEED WEBCAM]</span>
+        <button id="btn-minimize-cam" class="btn-mini" title="Minimize / Sembunyikan">[_]</button>
+      </div>
+      <div id="webcam-content">
+        <video id="webcam-video" playsinline muted autoplay></video>
+        <canvas id="webcam-canvas"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

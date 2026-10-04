@@ -1,0 +1,307 @@
+/* 
+  KIVOTOS SYSTEM UI - MINIMALIST
+  STRICT RULES:
+  1. ZERO BORDER RADIUS (border-radius: 0 !important)
+  2. ZERO GRADIENTS (Solid colors only)
+  3. SIMPLE & CLEAN LAYOUT (No bloated settings)
+*/
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  border-radius: 0 !important;
+  -webkit-font-smoothing: antialiased;
+}
+
+:root {
+  --bg-main: #0c0d10;
+  --bg-bar: #14171d;
+  --bg-card: #1c2028;
+  --border-color: #262b36;
+  --text-main: #e6edf3;
+  --text-dim: #8b949e;
+  --color-accent: #2563eb;
+  --color-accent-hover: #1d4ed8;
+  --color-danger: #dc2626;
+  --color-success: #16a34a;
+  --color-warn: #d97706;
+  --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+}
+
+/* ==========================================================================
+   TOP BAR (SIMPLE & CLEAN)
+   ========================================================================== */
+#top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  height: 48px;
+  background-color: var(--bg-bar);
+  border-bottom: 1px solid var(--border-color);
+  z-index: 50;
+  flex-shrink: 0;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.brand .tag {
+  color: var(--color-accent);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.brand .title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--text-main);
+}
+
+.status-wrapper {
+  display: flex;
+  align-items: center;
+}
+
+.badge {
+  display: inline-block;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-card);
+  color: var(--text-dim);
+}
+
+.badge.badge-off {
+  color: var(--text-dim);
+  border-color: var(--border-color);
+  background-color: var(--bg-card);
+}
+
+.badge.badge-warn {
+  color: #fbbf24;
+  border-color: var(--color-warn);
+  background-color: #451a03;
+}
+
+.badge.badge-active {
+  color: #4ade80;
+  border-color: var(--color-success);
+  background-color: #052e16;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ==========================================================================
+   BUTTONS
+   ========================================================================== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 14px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-card);
+  color: var(--text-main);
+  user-select: none;
+}
+
+.btn:hover {
+  background-color: #2b313d;
+}
+
+.btn:active {
+  background-color: #14171d;
+}
+
+.btn-primary {
+  background-color: var(--color-accent);
+  border-color: var(--color-accent);
+  color: #ffffff;
+}
+
+.btn-primary:hover {
+  background-color: var(--color-accent-hover);
+  border-color: var(--color-accent-hover);
+}
+
+.btn-danger {
+  background-color: var(--color-danger);
+  border-color: var(--color-danger);
+  color: #ffffff;
+}
+
+.btn-danger:hover {
+  background-color: #b91c1c;
+}
+
+.btn-secondary {
+  background-color: var(--bg-card);
+  color: var(--text-main);
+}
+
+.btn-mini {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 2px 6px;
+  cursor: pointer;
+}
+
+.btn-mini:hover {
+  color: var(--text-main);
+  background-color: var(--bg-card);
+  border-color: var(--border-color);
+}
+
+/* ==========================================================================
+   3D VIEWPORT
+   ========================================================================== */
+#viewport {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background-color: #08090b;
+}
+
+#canvas-container {
+  width: 100%;
+  height: 100%;
+}
+
+#canvas-container canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Loading Overlay */
+#loading-overlay {
+  position: absolute;
+  inset: 0;
+  background-color: #08090b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  transition: opacity 0.2s ease;
+}
+
+.loading-card {
+  width: 320px;
+  padding: 20px;
+  background-color: var(--bg-bar);
+  border: 1px solid var(--border-color);
+}
+
+.loading-title {
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.progress-track {
+  width: 100%;
+  height: 6px;
+  background-color: #000;
+  border: 1px solid var(--border-color);
+  margin-bottom: 8px;
+}
+
+#progress-fill {
+  height: 100%;
+  background-color: var(--color-accent);
+}
+
+.loading-sub {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+/* ==========================================================================
+   WEBCAM BOX (Sudut Kiri Bawah)
+   ========================================================================== */
+#webcam-box {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  width: 200px;
+  background-color: var(--bg-bar);
+  border: 1px solid var(--border-color);
+  z-index: 40;
+}
+
+#webcam-box.minimized #webcam-content {
+  display: none;
+}
+
+.webcam-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  background-color: var(--bg-card);
+  border-bottom: 1px solid var(--border-color);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-dim);
+}
+
+#webcam-content {
+  width: 100%;
+  height: 150px;
+  background-color: #000000;
+  position: relative;
+  overflow: hidden;
+}
+
+#webcam-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1);
+}
+
+#webcam-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  transform: scaleX(-1);
+}

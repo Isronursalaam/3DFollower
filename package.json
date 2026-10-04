@@ -1,0 +1,9 @@
+{
+  "name": "shiroko-3d-motion-tracker",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Shiroko 3D WebCam Motion Tracker",
+  "scripts": {
+    "start": "node server.js"
+  }
+}
